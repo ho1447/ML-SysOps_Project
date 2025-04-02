@@ -5,25 +5,20 @@
 Discuss: Value proposition: Your will propose a machine learning system that can be used in an existing business or service. (You should not propose a system in which a new business or service would be developed around the machine learning system.) Describe the value proposition for the machine learning system. What’s the (non-ML) status quo used in the business or service? What business metric are you going to be judged on? (Note that the “service” does not have to be for general users; you can propose a system for a science problem, for example.)
 -->
 
-Value proposition: 
-
 The current status quo, where people utilize multiple apps to plan meals, shop for ingredients, and prepare food, can be inefficient and time-consuming. We propose a machine learning system that integrates recipes and cooking guides with the grocery shopping experience. The system allows users to take or upload a picture of a dish and automatically generates the corresponding recipe and ingredient list. Using this information, it creates a shopping list with the necessary quantities, enhancing the grocery shopping experience. Alternatively, the system can also suggest recipes based on users' shopping lists or input ingredients. 
 
-The business metrics we will use are user retention and engagement. We will measure how frequently users return to the app and how much time they spend on it. Additionally, we will track how many users contribute personal recipes or offer recipe advice. These metrics will help evaluate the system's impact on user experience.
+The business metrics we will focus on are user retention and engagement. We will measure how often users return to the app and how much time they spend on it. Additionally, we will track how many users contribute personal recipes or offer recipe advice. These metrics will help evaluate the system's impact on user experience.
 
 ### Contributors
 
 <!-- Table of contributors and their roles. First row: define responsibilities that are shared by the team. Then each row after that is: name of contributor, their role, and in the third column you will link to their contributions. If your project involves multiple repos, you will link to their contributions in all repos here. -->
 
-| Name                            | Responsible for | Link to their commits in this repo |
-|---------------------------------|-----------------|------------------------------------|
-| All team members                |                 |                                    |
-| Team member 1                   |                 |                                    |
-| Team member 2                   |                 |                                    |
-| Team member 3                   |                 |                                    |
-| Team member 4 (if there is one) |                 |                                    |
-
-
+| Name                            | Responsible for              | Link to their commits in this repo |
+|---------------------------------|------------------------------|------------------------------------|
+| All team members                | Continuous X                 |                                    |
+| Team member 1                   | Model training               |                                    |
+| Team member 2                   | Model serving and monitoring |                                    |
+| Angelina Huang                  | Data pipeline                |                                    |
 
 ### System diagram
 
