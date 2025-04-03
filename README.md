@@ -1,7 +1,15 @@
 
 ## Modular Speech Command Recognition System
 
-<!-- 
+<!--
+Discuss: Value proposition: Your will propose a machine learning system that can be 
+used in an existing business or service. (You should not propose a system in which 
+a new business or service would be developed around the machine learning system.) 
+Describe the value proposition for the machine learning system. What’s the (non-ML) 
+status quo used in the business or service? What business metric are you going to be 
+judged on? (Note that the “service” does not have to be for general users; you can 
+propose a system for a science problem, for example.)
+-->
 Value Proposition:
 Voice-controlled interfaces are increasingly common in smart home devices, vehicles, and industrial machinery. Most systems today rely on proprietary cloud APIs like Google Assistant or Alexa, which introduce privacy risks, internet dependency, and latency. Our system improves on this by providing a cloud-native machine learning service that enables fast, customizable, and private speech command recognition.
 
@@ -9,7 +17,6 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
 
 Current non-ML status: Manual control interfaces, rule-based keyword spotting, or reliance on cloud APIs.
 Business metric: Recognition accuracy, latency per inference, system responsiveness under noise.)
--->
 
 ### Contributors
 
