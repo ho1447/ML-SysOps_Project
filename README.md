@@ -32,6 +32,7 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
 ### System diagram
 
 <!-- Overall digram of system. Doesn't need polish, does need to show all the pieces. Must include: all the hardware, all the containers/software platforms, all the models, all the data. -->
+![System diagram](system_diagram.png)
 
 ### Summary of outside materials
 
