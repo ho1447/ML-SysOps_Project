@@ -1,13 +1,15 @@
 
-## Title of project
+## Modular Speech Command Recognition System
 
 <!-- 
-Discuss: Value proposition: Your will propose a machine learning system that can be used in an existing business or service. (You should not propose a system in which a new business or service would be developed around the machine learning system.) Describe the value proposition for the machine learning system. What’s the (non-ML) status quo used in the business or service? What business metric are you going to be judged on? (Note that the “service” does not have to be for general users; you can propose a system for a science problem, for example.)
+Value Proposition:
+Voice-controlled interfaces are increasingly common in smart home devices, vehicles, and industrial machinery. Most systems today rely on proprietary cloud APIs like Google Assistant or Alexa, which introduce privacy risks, internet dependency, and latency. Our system improves on this by providing a cloud-native machine learning service that enables fast, customizable, and private speech command recognition.
+
+We train and serve models on Chameleon Cloud, exposing a speech recognition API that can be used in existing smart systems. The system supports real-time command detection and is later adaptable for edge deployment.
+
+Current non-ML status: Manual control interfaces, rule-based keyword spotting, or reliance on cloud APIs.
+Business metric: Recognition accuracy, latency per inference, system responsiveness under noise.)
 -->
-
-The current status quo, where people utilize multiple apps to plan meals, shop for ingredients, and prepare food, can be inefficient and time-consuming. We propose a machine learning system that integrates recipes and cooking guides with the grocery shopping experience. The system allows users to take or upload a picture of a dish and automatically generates the corresponding recipe and ingredient list. Using this information, it creates a shopping list with the necessary quantities, enhancing the grocery shopping experience. Alternatively, the system can also suggest recipes based on users' shopping lists or input ingredients. 
-
-The business metrics we will focus on are user retention and engagement. We will measure how often users return to the app and how much time they spend on it. Additionally, we will track how many users contribute personal recipes or offer recipe advice. These metrics will help evaluate the system's impact on user experience.
 
 ### Contributors
 
@@ -15,9 +17,9 @@ The business metrics we will focus on are user retention and engagement. We will
 
 | Name                            | Responsible for              | Link to their commits in this repo |
 |---------------------------------|------------------------------|------------------------------------|
-| All team members                | Continuous X                 |                                    |
-| Team member 1                   | Model training               |                                    |
-| Team member 2                   | Model serving and monitoring |                                    |
+| All team members                | Overall system architecture  |                                    |
+| Vorrapard Kumthongdee           | Model training               |                                    |
+| Iris Ho                         | Model serving and monitoring |                                    |
 | Angelina Huang                  | Data pipeline                |                                    |
 
 ### System diagram
@@ -28,24 +30,24 @@ The business metrics we will focus on are user retention and engagement. We will
 
 <!-- In a table, a row for each dataset, foundation model. Name of data/model, conditions under which it was created (ideally with links/references), conditions under which it may be used. -->
 
-|              | How it was created | Conditions of use |
-|--------------|--------------------|-------------------|
-| Data set 1   |                    |                   |
-| Data set 2   |                    |                   |
-| Base model 1 |                    |                   |
-| etc          |                    |                   |
+|                        | How it was created                                                             | Conditions of use      |
+|------------------------|--------------------------------------------------------------------------------|------------------------|
+| Speech Commands v2     | Created by Google, includes 105k+ WAV clips of spoken commands                 | Free for academic use  |
+| Background noise data  | Packaged with SCv2 dataset for audio augmentation                              | Free for academic use  |
+| Wav2Vec2.0             | Pretrained self-supervised model for audio embeddings (HuggingFace)            | Apache 2.0 License     |
+| SpeechBrain            | Open-source toolkit for speech processing (feature extraction, classification) | MIT License            |
 
 
 ### Summary of infrastructure requirements
 
 <!-- Itemize all your anticipated requirements: What (`m1.medium` VM, `gpu_mi100`), how much/when, justification. Include compute, floating IPs, persistent storage. The table below shows an example, it is not a recommendation. -->
 
-| Requirement     | How many/when                                     | Justification |
-|-----------------|---------------------------------------------------|---------------|
-| `m1.medium` VMs | 3 for entire project duration                     | ...           |
-| `gpu_mi100`     | 4 hour block twice a week                         |               |
-| Floating IPs    | 1 for entire project duration, 1 for sporadic use |               |
-| etc             |                                                   |               |
+| Requirement     | How many/when                                     | Justification                                               |
+|-----------------|---------------------------------------------------|-------------------------------------------------------------|
+| `m1.medium` VMs | 3 for entire project duration                     | Run API server, monitoring, preprocessing                   |
+| `gpu_mi100`     | 4 hour block twice a week                         | Train models like Wav2Vec2.0 or CNN-based classifiers       |
+| Floating IPs    | 1 for entire project duration, 1 for sporadic use | Expose API externally, test in canary/staging environments  |
+| Persistent Vols | 50 GB                                             | Store dataset, processed features, model artifacts and logs |
 
 ### Detailed design plan
 
