@@ -63,17 +63,78 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
 #### Model training and training platforms
 
 <!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, and which optional "difficulty" points you are attempting. -->
+1. **Strategy**:
+   - Use a **three-part model**:
+     - Feature extraction (Mel spectrograms using torchaudio)
+     - Noise classification model (CNN-based)
+     - Speech command classification model (MobileNetV2 or Wav2Vec2.0)
+   - Train on **Google Speech Commands v2** with augmentation
+   - Tune hyperparameters with **Ray Tune**
+
+2. **Tools**:
+   - Ray Train for distributed training on Chameleon Cloud
+   - MLflow to track experiment runs and parameters
+
+3. **Justification**:
+   - Enables modular updates and robust performance in noisy conditions
+   - Scalable training supports model reuse or extension (e.g., multi-language)
+
+4. **Course links**:
+   - **Unit 4**: Training at scale with Ray and augmentation
+   - **Unit 5**: MLflow for experiment logging
+   - ✅ **Difficulty point**: Ray Tune for HPO + multi-model setup
+
 
 #### Model serving and monitoring platforms
 
 <!-- Make sure to clarify how you will satisfy the Unit 6 and Unit 7 requirements,  and which optional "difficulty" points you are attempting. -->
+1. **Strategy**:
+   - Package models into a container and expose them via a **FastAPI endpoint**
+   - Perform inference using ONNX-optimized models on both GPU and CPU
+   - Compare latency and concurrency behavior
+
+2. **Monitoring**:
+   - Log prediction confidence, input quality (signal-to-noise)
+   - Use a dashboard to visualize misclassification trends and input stats
+
+3. **Course links**:
+   - **Unit 6**: Serving via API with latency/concurrency monitoring
+   - **Unit 7**: Log-based and live monitoring of performance
+   - ✅ **Difficulty point**: ONNX vs TorchScript deployment + dashboard for model degradation
 
 #### Data pipeline
 
 <!-- Make sure to clarify how you will satisfy the Unit 8 requirements,  and which optional "difficulty" points you are attempting. -->
+1. **Strategy**:
+   - Offline:
+     - Normalize and preprocess WAV audio to Mel spectrograms
+     - Store features for reuse and retraining
+   - Online:
+     - Simulate user input (e.g., voice uploads)
+     - Route through pipeline for evaluation and monitoring
+
+2. **Data storage**:
+   - Store raw and processed audio in Chameleon persistent volumes
+   - Annotate augmented versions for retraining
+
+3. **Course links**:
+   - **Unit 8**: Persistent offline pipeline + simulated online inference
+   - ✅ Optional difficulty: Simulate real-time noisy data + dashboard insights
 
 #### Continuous X
 
 <!-- Make sure to clarify how you will satisfy the Unit 3 requirements,  and which optional "difficulty" points you are attempting. -->
+1. **Strategy**:
+   - Use **Terraform** and **Helm** to provision training, serving, and tracking environments on Chameleon
+   - Use **Argo Workflows** to retrain and redeploy:
+     - Triggered weekly or when model degradation is detected
+     - Auto-promote from staging → canary → production if validation passes
+
+2. **CI/CD**:
+   - GitHub Actions for building containers, testing, and pushing to registry
+
+3. **Course links**:
+   - **Unit 3**: Full CI/CD setup with infrastructure as code
+   - Immutable container deployments, no ClickOps involved
 
 
