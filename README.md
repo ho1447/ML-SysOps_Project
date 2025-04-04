@@ -28,6 +28,7 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
 | Vorrapard Kumthongdee           | Model training               | https://github.com/ho1447/ML-SysOps_Project/commits/main/?author=vorrapard |
 | Iris Ho                         | Model serving and monitoring | https://github.com/ho1447/ML-SysOps_Project/commits/main/?author=ho1447 |
 | Angelina Huang                  | Data pipeline                | https://github.com/ho1447/ML-SysOps_Project/commits/main/?author=phh242 |
+| Jay Roy                         | Continuous X pipeline        | https://github.com/ho1447/ML-SysOps_Project/commits/main/?author=jayroy9825|
 
 ### System diagram
 
