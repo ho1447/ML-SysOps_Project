@@ -10,13 +10,27 @@ status quo used in the business or service? What business metric are you going t
 judged on? (Note that the “service” does not have to be for general users; you can 
 propose a system for a science problem, for example.)
 -->
-Value Proposition:
+
+### Table of Contents
+1. [Value Proposition](#value-proposition)
+2. [Contributors](#contributors)
+3. [System Diagram](#system-diagram)
+4. [Summary of Outside Materials](#summary-of-outside-materials)
+5. [Summary of Infrastructure Requirements](#summary-of-infrastructure-requirements)
+6. [Detailed Design Plan](#detailed-design-plan)
+    - [Model Training and Training Platforms](#model-training-and-training-platforms)
+    - [Model Serving and Monitoring Platforms](#model-serving-and-monitoring-platforms)
+    - [Data Pipeline](#data-pipeline)
+    - [Continuous X](#continuous-x)
+7. [Difficulty Points Achieved](#difficulty-points-achieved)
+
+## Value Proposition
 Voice-controlled interfaces are increasingly common in smart home devices, vehicles, and industrial machinery. Most systems today rely on proprietary cloud APIs like Google Assistant or Alexa, which introduce privacy risks, internet dependency, and latency. Our system improves on this by providing a cloud-native machine learning service that enables fast, customizable, and private speech command recognition.
 
 We train and serve models on Chameleon Cloud, exposing a speech recognition API that can be used in existing smart systems. The system supports real-time command detection and is later adaptable for edge deployment.
 
-Current non-ML status: Manual control interfaces, rule-based keyword spotting, or reliance on cloud APIs.
-Business metric: Recognition accuracy, latency per inference, system responsiveness under noise.)
+**Current non-ML status:** Manual control interfaces, rule-based keyword spotting, or reliance on cloud APIs.
+**Business metric:** Recognition accuracy, latency per inference, system responsiveness under noise.)
 
 ### Contributors
 
@@ -30,12 +44,12 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
 | Angelina Huang                  | Data pipeline                | https://github.com/ho1447/ML-SysOps_Project/commits/main/?author=phh242 |
 | Jay Roy                         | Continuous X pipeline        | https://github.com/ho1447/ML-SysOps_Project/commits/main/?author=jayroy9825|
 
-### System diagram
+### System Diagram
 
 <!-- Overall digram of system. Doesn't need polish, does need to show all the pieces. Must include: all the hardware, all the containers/software platforms, all the models, all the data. -->
 ![System diagram](system_diagram.png)
 
-### Summary of outside materials
+### Summary of Outside Materials
 
 <!-- In a table, a row for each dataset, foundation model. Name of data/model, conditions under which it was created (ideally with links/references), conditions under which it may be used. -->
 
@@ -47,7 +61,7 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
 | SpeechBrain            | Open-source toolkit for speech processing (feature extraction, classification) | MIT License            |
 
 
-### Summary of infrastructure requirements
+### Summary of Infrastructure Requirements
 
 <!-- Itemize all your anticipated requirements: What (`m1.medium` VM, `gpu_mi100`), how much/when, justification. Include compute, floating IPs, persistent storage. The table below shows an example, it is not a recommendation. -->
 
@@ -58,11 +72,11 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
 | Floating IPs    | 1 for entire project duration, 1 for sporadic use | Expose API externally, test in canary/staging environments  |
 | Persistent Vols | 50 GB                                             | Store dataset, processed features, model artifacts and logs |
 
-### Detailed design plan
+### Detailed Design Plan
 
 <!-- In each section, you should describe (1) your strategy, (2) the relevant parts of the diagram, (3) justification for your strategy, (4) relate back to lecture material, (5) include specific numbers. -->
 
-#### Model training and training platforms
+#### Model Training and Training Platforms
 
 <!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, and which optional "difficulty" points you are attempting. -->
 1. **Strategy**:
@@ -87,7 +101,7 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
    - ✅ **Difficulty point**: Ray Tune for HPO + multi-model setup
 
 
-#### Model serving and monitoring platforms
+#### Model Serving and Monitoring Platforms
 
 <!-- Make sure to clarify how you will satisfy the Unit 6 and Unit 7 requirements,  and which optional "difficulty" points you are attempting. -->
 1. **Strategy**:
@@ -104,7 +118,7 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
    - **Unit 7**: Log-based and live monitoring of performance
    - ✅ **Difficulty point**: ONNX vs TorchScript deployment + dashboard for model degradation
 
-#### Data pipeline
+#### Data Pipeline
 
 <!-- Make sure to clarify how you will satisfy the Unit 8 requirements,  and which optional "difficulty" points you are attempting. -->
 1. **Strategy**:
@@ -123,7 +137,7 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
    - **Unit 8**: Persistent offline pipeline + simulated online inference
    - ✅ Optional difficulty: Simulate real-time noisy data + dashboard insights
 
-#### Continuous X
+### Continuous X
 
 <!-- Make sure to clarify how you will satisfy the Unit 3 requirements,  and which optional "difficulty" points you are attempting. -->
 1. **Strategy**:
@@ -139,4 +153,6 @@ Business metric: Recognition accuracy, latency per inference, system responsiven
    - **Unit 3**: Full CI/CD setup with infrastructure as code
    - Immutable container deployments, no ClickOps involved
 
+### Difficulty Points Achieved
+We have satisfied **4 difficulty points** across different units in our project proposal, ensuring our approach is robust, scalable, and aligned with the requirements.
 
