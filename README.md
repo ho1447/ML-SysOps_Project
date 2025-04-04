@@ -53,12 +53,12 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
 
 <!-- In a table, a row for each dataset, foundation model. Name of data/model, conditions under which it was created (ideally with links/references), conditions under which it may be used. -->
 
-|                        | How it was created                                                             | Conditions of use      |
-|------------------------|--------------------------------------------------------------------------------|------------------------|
-| Speech Commands v2     | Created by Google, includes 105k+ WAV clips of spoken commands                 | Free for academic use  |
-| Background noise data  | Packaged with SCv2 dataset for audio augmentation                              | Free for academic use  |
-| Wav2Vec2.0             | Pretrained self-supervised model for audio embeddings (HuggingFace)            | Apache 2.0 License     |
-| SpeechBrain            | Open-source toolkit for speech processing (feature extraction, classification) | MIT License            |
+|                              | How it was created                                                             | Conditions of use      |
+|------------------------------|--------------------------------------------------------------------------------|------------------------|
+| Speech Commands v2 (3.34 GB) | Created by Google, includes 105k+ WAV clips of spoken commands                 | Free for academic use  |
+| Background noise data        | Packaged with SCv2 dataset for audio augmentation                              | Free for academic use  |
+| Wav2Vec2.0 (95m parameters)  | Pretrained self-supervised model for audio embeddings (HuggingFace)            | Apache 2.0 License     |
+| SpeechBrain                  | Open-source toolkit for speech processing (feature extraction, classification) | MIT License            |
 
 
 ### Summary of Infrastructure Requirements
