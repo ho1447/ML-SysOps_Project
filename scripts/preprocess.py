@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import torchaudio
 from pydub import AudioSegment
 from pathlib import Path
 
@@ -39,6 +41,27 @@ def normalize_overlay(dataset_dir, subdirs):
                 mixed_path = os.path.join(normalized_dir_path, mixed_name)
                 mixed.export(mixed_path, format="wav")
 
+def generate_mel(dataset_dir, subdirs):
+    mel_dataset_dir = dataset_dir + "_processed_mel"
+    for subdir in subdirs:
+        dir_path = os.path.join(dataset_dir + "_processed", subdir)
+        mel_dir_path = os.path.join(mel_dataset_dir, subdir)
+        os.makedirs(mel_dir_path, exist_ok=True)
+
+        for file in os.listdir(dir_path):
+            if not file.endswith(".wav"):
+                continue
+
+            file_path = os.path.join(dir_path, file)
+            mal_file_name = Path(file).stem + ".npy"
+            mel_file_path = os.path.join(mel_dataset_dir, mal_file_name)
+
+            # generate mel spectrogram for wav file
+            waveform, sample_rate = torchaudio.load(file_path, normalize=True)
+            transform = torchaudio.transforms.MelSpectrogram(sample_rate)
+            mel_specgram = transform(waveform)
+            np.save(mel_file_path, mel_specgram.numpy())
+
 # define path
 base_dir = "/Users/angelinahuang/Desktop/test"
 dataset_base_dir = "/Users/angelinahuang/Desktop/test/speech_commands_v0.02"
@@ -76,3 +99,35 @@ test_subdirs = ["_silence_", "_unknown_", "down", "go", "left", "no", "off",
 print("Normalizing and mixing test dataset...")
 normalize_overlay(dataset_test_dir, test_subdirs)
 print("Test dataset process complete.")
+
+def melspectrogram(file_path, mel_file_path):
+    waveform, sample_rate = torchaudio.load(file_path, normalize=True)
+    transform = torchaudio.transforms.MelSpectrogram(sample_rate)
+    mel_specgram = transform(waveform)
+    np.save(mel_file_path, mel_specgram.numpy())
+
+def generate_mel(dataset_dir, subdirs):
+    mel_dataset_dir = dataset_dir + "_processed_mel"
+    for subdir in subdirs:
+        dir_path = os.path.join(dataset_dir + "_processed", subdir)
+        mel_dir_path = os.path.join(mel_dataset_dir, subdir)
+        os.makedirs(mel_dir_path, exist_ok=True)
+
+        for file in os.listdir(dir_path):
+            if not file.endswith(".wav"):
+                continue
+
+            file_path = os.path.join(dir_path, file)
+            mal_file_name = Path(file).stem + ".npy"
+            mel_file_path = os.path.join(mel_dir_path, mal_file_name)
+
+            # generate mel spectrogram for wav file and save
+            melspectrogram(file_path, mel_file_path)
+
+print("Generating mel spectrogram for main dataset...")
+generate_mel(dataset_base_dir, base_subdirs)
+print("Generating complete.")
+
+print("Generating mel spectrogram for test dataset...")
+generate_mel(dataset_test_dir, test_subdirs)
+print("Generating complete.")
