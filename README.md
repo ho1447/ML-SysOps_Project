@@ -114,7 +114,7 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
    - Use a dashboard to visualize misclassification trends and input stats
 
 3. **Course links**:
-   - **Unit 6**: Serving via API with latency/concurrency monitoring
+   - **Unit 6**: Serving via API and edge deployment for a low resource device with latency/concurrency monitoring
    - **Unit 7**: Log-based and live monitoring of performance
    - ✅ **Difficulty point**: ONNX vs TorchScript deployment + dashboard for model degradation
 
