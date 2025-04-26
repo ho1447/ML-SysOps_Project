@@ -47,6 +47,9 @@ services:
       - |
         set -e
 
+        apt-get update && apt-get install -y ffmpeg libsox-dev
+        pip install --no-cache-dir numpy torchaudio pydub
+
         python3 -c '
         import os
         import numpy as np
