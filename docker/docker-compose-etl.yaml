@@ -156,14 +156,15 @@ services:
                     # generate mel spectrogram for wav file and save
                     melspectrogram(file_path, mel_file_path)
 
-                    print("Generating mel spectrogram for main dataset...")
-                    generate_mel(dataset_base_dir, base_subdirs)
-                    print("Generating complete.")
+        print("Generating mel spectrogram for main dataset...")
+        generate_mel(dataset_base_dir, base_subdirs)
+        print("Generating complete.")
 
-                    print("Generating mel spectrogram for test dataset...")
-                    generate_mel(dataset_test_dir, test_subdirs)
-                    print("Generating complete.")
+        print("Generating mel spectrogram for test dataset...")
+        generate_mel(dataset_test_dir, test_subdirs)
+        print("Generating complete.")
         '
+        
         echo "Listing contents of /data after transform stage:"
         ls -l /data
 
