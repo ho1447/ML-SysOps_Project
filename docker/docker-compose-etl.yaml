@@ -135,7 +135,7 @@ services:
 
         def melspectrogram(file_path, mel_file_path):
             waveform, sample_rate = torchaudio.load(file_path, normalize=True)
-            transform = torchaudio.transforms.MelSpectrogram(sample_rate)
+            transform = torchaudio.transforms.MelSpectrogram(sample_rate, n_fft=512, n_mels=80)
             mel_specgram = transform(waveform)
             np.save(mel_file_path, mel_specgram.numpy())
 
