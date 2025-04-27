@@ -52,6 +52,7 @@ services:
 
         python3 -c '
         import os
+        import random
         import numpy as np
         import torchaudio
         from pydub import AudioSegment
@@ -74,7 +75,13 @@ services:
                 normalized_dir_path = os.path.join(normalized_dataset_dir, subdir)
                 os.makedirs(normalized_dir_path, exist_ok=True)
 
-                for file in os.listdir(dir_path):
+                # randomly select half of the files
+                selected_files = [entry.name for entry in os.scandir(dir_path) if entry.is_file()]
+                random.shuffle(selected_files)
+                half_files = selected_files[:len(selected_files) // 2]
+
+                for file in half_files:
+                # for file in os.listdir(dir_path):
                     if not file.endswith(".wav"):
                         continue
 
@@ -197,7 +204,7 @@ services:
             # We want to ignore anything after '_nohash_' in the file name when
             # deciding which set to put a wav in, so the data set creator has a way of
             # grouping wavs that are close variations of each other.
-            hash_name = re.sub(r'_nohash_.*$', '', base_name)
+            hash_name = re.sub(r"_nohash_.*$", "", base_name)
             # This looks a bit magical, but we need to decide whether this file should
             # go into the training, testing, or validation sets, and we want to keep
             # existing files in the same set even if more files are subsequently
@@ -205,19 +212,19 @@ services:
             # To do that, we need a stable way of deciding based on just the file name
             # itself, so we do a hash of that and then use that to generate a
             # probability value that we use to assign it.
-            hash_name_hashed = hashlib.sha1(hash_name.encode('utf-8')).hexdigest()
+            hash_name_hashed = hashlib.sha1(hash_name.encode("utf-8")).hexdigest()
             #   hash_name_hashed = hashlib.sha1(hash_name).hexdigest()
 
             percentage_hash = ((int(hash_name_hashed, 16) %
                                 (MAX_NUM_WAVS_PER_CLASS + 1)) *
                                 (100.0 / MAX_NUM_WAVS_PER_CLASS))
             if percentage_hash < validation_percentage:
-                result = 'validation'
+                result = "validation"
             elif percentage_hash < (testing_percentage + validation_percentage):
-                result = 'evaluation'
+                result = "evaluation"
                 # result = 'testing'
             else:
-                result = 'training'
+                result = "training"
             return result
 
         base_dir = "/data"
