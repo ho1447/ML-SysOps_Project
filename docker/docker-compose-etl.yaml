@@ -69,6 +69,7 @@ services:
         def normalize_overlay(dataset_dir, subdirs):
             normalized_dataset_dir = dataset_dir + "_processed"
             for subdir in subdirs:
+                print(subdir)
                 dir_path = os.path.join(dataset_dir, subdir)
                 normalized_dir_path = os.path.join(normalized_dataset_dir, subdir)
                 os.makedirs(normalized_dir_path, exist_ok=True)
@@ -141,6 +142,7 @@ services:
         def generate_mel(dataset_dir, subdirs):
             mel_dataset_dir = dataset_dir + "_processed_mel"
             for subdir in subdirs:
+                print(subdir)
                 dir_path = os.path.join(dataset_dir + "_processed", subdir)
                 mel_dir_path = os.path.join(mel_dataset_dir, subdir)
                 os.makedirs(mel_dir_path, exist_ok=True)
@@ -249,6 +251,7 @@ services:
                         "six", "stop", "three", "tree", "two", "up", "visual", "wow", "yes", "zero"]
 
         for subdir in base_subdirs:
+            print(subdir)
             dir_path = os.path.join(dataset_base_dir, subdir)
             mel_dir_path = os.path.join(dataset_mel_dir, subdir)
 
