@@ -1,4 +1,5 @@
 import os
+import random
 import numpy as np
 import torchaudio
 from pydub import AudioSegment
@@ -16,11 +17,18 @@ def overlay(speech, background):
 def normalize_overlay(dataset_dir, subdirs):
     normalized_dataset_dir = dataset_dir + "_processed"
     for subdir in subdirs:
+        print(subdir)
         dir_path = os.path.join(dataset_dir, subdir)
         normalized_dir_path = os.path.join(normalized_dataset_dir, subdir)
         os.makedirs(normalized_dir_path, exist_ok=True)
 
-        for file in os.listdir(dir_path):
+        # randomly select half of the files
+        selected_files = [entry.name for entry in os.scandir(dir_path) if entry.is_file()]
+        random.shuffle(selected_files)
+        half_files = selected_files[:len(selected_files) // 2]
+
+        for file in half_files:
+        # for file in os.listdir(dir_path):
             if not file.endswith(".wav"):
                 continue
 
@@ -42,8 +50,8 @@ def normalize_overlay(dataset_dir, subdirs):
                 mixed.export(mixed_path, format="wav")
 
 # define path
-base_dir = "/Users/angelinahuang/Desktop/test"
-dataset_base_dir = "/Users/angelinahuang/Desktop/test/speech_commands_v0.02"
+base_dir = "/data"
+dataset_base_dir = os.path.join(base_dir, "speech_commands_v0.02")
 background_subdirs = ["_background_noise_"]
 
 # normalize background audio files
@@ -72,7 +80,7 @@ normalize_overlay(dataset_base_dir, base_subdirs)
 print("Main dataset process complete.")
 
 # normalize and overlay test with background audio files
-dataset_test_dir = "/Users/angelinahuang/Desktop/test/speech_commands_test_set_v0.02"
+dataset_test_dir = os.path.join(base_dir, "speech_commands_test_set_v0.02")
 test_subdirs = ["_silence_", "_unknown_", "down", "go", "left", "no", "off",
                 "on", "right", "stop", "up", "yes"]
 print("Normalizing and mixing test dataset...")
@@ -81,13 +89,14 @@ print("Test dataset process complete.")
 
 def melspectrogram(file_path, mel_file_path):
     waveform, sample_rate = torchaudio.load(file_path, normalize=True)
-    transform = torchaudio.transforms.MelSpectrogram(sample_rate)
+    transform = torchaudio.transforms.MelSpectrogram(sample_rate, n_fft=512, n_mels=80)
     mel_specgram = transform(waveform)
     np.save(mel_file_path, mel_specgram.numpy())
 
 def generate_mel(dataset_dir, subdirs):
     mel_dataset_dir = dataset_dir + "_processed_mel"
     for subdir in subdirs:
+        print(subdir)
         dir_path = os.path.join(dataset_dir + "_processed", subdir)
         mel_dir_path = os.path.join(mel_dataset_dir, subdir)
         os.makedirs(mel_dir_path, exist_ok=True)
