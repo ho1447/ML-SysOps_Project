@@ -79,7 +79,7 @@ services:
       - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000/
       - SPEECHCOMMANDS_DATA_DIR=/mnt/speechcommands
     volumes:
-      - ~/ML-SysOps_Project/workspace:/home/work/
+      - ~/ML-SysOps_Project/workspace:/home/jovyan/work/
       - type: bind
         source: /mnt/object
         target: /mnt/speechcommands
