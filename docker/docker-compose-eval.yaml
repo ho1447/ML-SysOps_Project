@@ -1,0 +1,98 @@
+name: evaluation
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: always
+    expose:
+      - "9000"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: "your-access-key"
+      MINIO_ROOT_PASSWORD: "your-secret-key"
+    healthcheck:
+      test: timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1
+      interval: 1s
+      timeout: 10s
+      retries: 5
+    command: server /data --console-address ":9001"
+    volumes:
+      - /mnt/block/minio_data:/data
+
+  minio-create-bucket:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set minio http://minio:9000 your-access-key your-secret-key &&
+      if ! mc ls minio/mlflow-artifacts; then
+        mc mb minio/mlflow-artifacts &&
+        echo 'Bucket mlflow-artifacts created'
+      else
+        echo 'Bucket mlflow-artifacts already exists';
+      fi"
+      
+  jupyter:
+    image: quay.io/jupyter/pytorch-notebook:pytorch-2.5.1
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    shm_size: 8g
+    environment:
+      - SPEECHCOMMANDS_DATA_DIR=/mnt/speechcommands
+      - MINIO_USER=your-access-key
+      - MINIO_PASSWORD=your-secret-key
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USER_TOKEN=ab9927067c51ff279d340d7321e4890dc2841c4a
+    volumes:
+      - ~/ML-SysOps_Project/workspace:/home/jovyan/work/
+      - type: bind
+        source: /mnt/object
+        target: /mnt/speechcommands
+        read_only: true
+    command: >
+      bash -c "python3 -m pip install mlflow && boto3 && start-notebook.sh"
+
+  fastapi_server:
+    build:
+      context: /home/cc/ML-SysOps_Project/fastapi_pt
+      dockerfile: Dockerfile
+    container_name: fastapi_server
+    ports:
+      - "8000:8000"  # for HTTP requests
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  label-studio:
+    image: heartexlabs/label-studio:1.16.0
+    container_name: label-studio
+    ports:
+      - "8080:8080"
+    volumes:
+      - /home/cc/eval-loop-chi/scripts:/label-studio/scripts
+    environment:
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USERNAME=labelstudio@example.com
+      - LABEL_STUDIO_PASSWORD=labelstudio
+      - LABEL_STUDIO_USER_TOKEN=ab9927067c51ff279d340d7321e4890dc2841c4a
