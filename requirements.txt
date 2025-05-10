@@ -2,7 +2,9 @@ torch
 torchaudio
 transformers
 mlflow
+datasets
 pandas
 numpy
 scikit-learn
 ray[train]
+huggingface_hub
