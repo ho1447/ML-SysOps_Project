@@ -66,7 +66,7 @@ services:
       - "8000:8000"
     command: >
       /bin/sh -c "pip install psycopg2-binary boto3 &&
-      mlflow server --backend-store-uri postgresql://user:password@postgres/mlflowdb 
+      mlflow server --backend-store-uri postgresql://user:password@postgres/mlflowdb
       --artifacts-destination s3://mlflow-artifacts/ --serve-artifacts --host 0.0.0.0 --port 8000"
 
   jupyter:
@@ -78,6 +78,10 @@ services:
     environment:
       - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000/
       - SPEECHCOMMANDS_DATA_DIR=/mnt/speechcommands
+      - MINIO_USER=your-access-key
+      - MINIO_PASSWORD=your-secret-key
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USER_TOKEN=ab9927067c51ff279d340d7321e4890dc2841c4a
     volumes:
       - ~/ML-SysOps_Project/workspace:/home/jovyan/work/
       - type: bind
@@ -85,4 +89,53 @@ services:
         target: /mnt/speechcommands
         read_only: true
     command: >
-      bash -c "python3 -m pip install mlflow && start-notebook.sh"
+      bash -c "python3 -m pip install mlflow boto3 && start-notebook.sh"
+
+  fastapi_server:
+    build:
+      context: /home/cc/ML-SysOps_Project/fastapi_pt
+      dockerfile: Dockerfile
+    container_name: fastapi_server
+    user: "0:0"
+    ports:
+      - "5000:8000"
+      # - "8000:8000"  # for HTTP requests
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    user: "0:0"
+    ports:
+      - "9090:9090"
+    volumes:
+      - /mnt/block/prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    user: "0:0"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - /mnt/block/grafana_data:/var/lib/grafana
+
+  label-studio:
+    image: heartexlabs/label-studio:1.16.0
+    container_name: label-studio
+    user: "0:0"
+    ports:
+      - "8080:8080"
+    volumes:
+      - /mnt/block/label-studio_data:/label-studio/data
+      - /home/cc/ML-SysOps_Project/scripts:/label-studio/scripts
+    environment:
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USERNAME=labelstudio@example.com
+      - LABEL_STUDIO_PASSWORD=labelstudio
+      - LABEL_STUDIO_USER_TOKEN=ab9927067c51ff279d340d7321e4890dc2841c4a
