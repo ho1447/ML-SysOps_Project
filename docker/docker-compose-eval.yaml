@@ -35,7 +35,7 @@ services:
       else
         echo 'Bucket mlflow-artifacts already exists';
       fi"
-      
+
   jupyter:
     image: quay.io/jupyter/pytorch-notebook:pytorch-2.5.1
     container_name: jupyter
@@ -55,7 +55,7 @@ services:
         target: /mnt/speechcommands
         read_only: true
     command: >
-      bash -c "python3 -m pip install mlflow && boto3 && start-notebook.sh"
+      bash -c "python3 -m pip install mlflow && start-notebook.py"
 
   fastapi_server:
     build:
