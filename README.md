@@ -121,21 +121,59 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
 #### Data Pipeline
 
 <!-- Make sure to clarify how you will satisfy the Unit 8 requirements,  and which optional "difficulty" points you are attempting. -->
-1. **Strategy**:
-   - Offline:
-     - Normalize and preprocess WAV audio to Mel spectrograms
-     - Store features for reuse and retraining
-   - Online:
-     - Simulate user input (e.g., voice uploads)
-     - Route through pipeline for evaluation and monitoring
+1. **Persistent storage:**
+    - Object storage bucket on CHI@TACC (21.96 GB): [docker-compose-etl.yaml](/docker/docker-compose-etl.yaml)
+        - speech_commands_v0.02 
+        - speech_commands_v0.02_processed
+        - speech_commands_v0.02_processed_mel
+        - speech_commands_test_set_v0.02
+        - speech_commands_test_set_v0.02_processed
+        - speech_commands_test_set_v0.02_processed_mel
+    - Block storage volume on KVM@TACC (50 GB): [docker-compose-block.yaml](/docker/docker-compose-block.yaml)
+        - Minio
+        - Postgres
+        - MLflow
+        - Jupyter
+        - Prometheus
+        - Grafana
+        - Label Studio
 
-2. **Data storage**:
-   - Store raw and processed audio in Chameleon persistent volumes
-   - Annotate augmented versions for retraining
+2. **Offline data:**
+    - Training dataset: speech_commands_v0.02
+        - Consists of one-second .wav audio files, each containing an English word spoken by different speakers
+        - Crowdsourced by Google, where participants were prompted to say a specific command such as "yes", "no", "stop", etc.
+        - Also includes realistic background audio files ("doing_the_dishes.wav", "running_tap.wav") which can be mixed into training data to simulate noisy environments
+        - Dataset sample
+            - Speech Commands: [0a2b400e_nohash_0.wav](/data/0a2b400e_nohash_0.wav)
+            - Background noise: [doing_the_dishes.wav](/data/doing_the_dishes.wav)
 
-3. **Course links**:
-   - **Unit 8**: Persistent offline pipeline + simulated online inference
-   - ✅ Optional difficulty: Simulate real-time noisy data + dashboard insights
+        <!-- Relate the data sample to the specific customer -->
+        <!-- If relevant, describe what is known about a production sample over its lifetime. (example: are some features only known later? is there a natural ground truth label?) -->
+
+3. **Data pipeline:**
+    - Retrieves the data from its original source and loads it into the object store: [docker-compose-etl.yaml](/docker/docker-compose-etl.yaml)
+        - extract-data
+            - Downloads speech_commands_v0.02 and speech_commands_test_set_v0.02
+            - Unzips speech_commands_v0.02 and speech_commands_test_set_v0.02
+        - process-data
+            - Normalizes the .wav audio files in speech_commands_v0.02 and speech_commands_test_set_v0.02
+            - Overlays speech command audio files with background noise audio files, saving the results to:
+                - speech_commands_v0.02_processed 
+                - speech_commands_test_set_v0.02_processed
+            - Generates mel spectrograms for the processed audio files, saving the results to:
+                - speech_commands_v0.02_processed_mel
+                - speech_commands_test_set_v0.02_processed_mel
+        - transform-data
+            - Organizes speech_commands_v0.02_processed and speech_commands_v0.02_processed_mel into directories ("training", "validation", "evaluation") according to command labels
+                - Decides which set the data should belong to by taking and using a hash of the filename
+                - Training:Validation:Evaluation = 8:1:1
+        - load-data
+            - Loads training data into the object store
+
+4. **Online data:**
+    - Sends new data to the FastAPI inference endpoint during "production" use: [online_data_pipeline.py](/workspace/online_data_pipeline.py)
+        - Uses speech_commands_test_set_v0.02_processed and as "new" data
+        - Shuffle the paths to the files and send to the FastAPI inference endpoint
 
 ### Continuous X
 
