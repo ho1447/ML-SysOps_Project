@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel, Field
 import torch
 import numpy as np
@@ -29,7 +29,7 @@ ort_session = ort.InferenceSession("test.onnx")
 
 
 @app.post("/predict")
-def predict(request: Request):
+def predict(request: UploadFile):
     try:
         speech_array, sr = sf.read(request.file)
         features = processor(speech_array, sampling_rate=16000, return_tensors="pt")
@@ -43,7 +43,7 @@ def predict(request: Request):
         return PredictionResponse(prediction=processor.decode(prediction.squeeze().tolist()))
 
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Inference error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Inference error: {str(e)}")
 
 
 Instrumentator().instrument(app).expose(app)

@@ -9,3 +9,5 @@ torchvision==0.20.1
 soundfile
 onnxruntime
 pydantic
+transformers
+python-multipart
