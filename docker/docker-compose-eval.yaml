@@ -30,7 +30,7 @@ services:
       /bin/sh -c "
       mc alias set minio http://minio:9000 your-access-key your-secret-key &&
       if ! mc ls minio/mlflow-artifacts; then
-        mc mb minio/mlflow-artifacts &&
+        mc mb minio/mlflow-artifacts && mc mb minio/production &&
         echo 'Bucket mlflow-artifacts created'
       else
         echo 'Bucket mlflow-artifacts already exists';
@@ -46,6 +46,7 @@ services:
       - SPEECHCOMMANDS_DATA_DIR=/mnt/speechcommands
       - MINIO_USER=your-access-key
       - MINIO_PASSWORD=your-secret-key
+      - MINIO_URL=http://minio:9000
       - LABEL_STUDIO_URL=http://label-studio:8080
       - LABEL_STUDIO_USER_TOKEN=ab9927067c51ff279d340d7321e4890dc2841c4a
     volumes:

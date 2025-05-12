@@ -2,8 +2,10 @@ import os
 import soundfile as sf
 import pytest
 import numpy as np
+import torch
+import torch.nn as nn
 import onnxruntime as ort
-from transformers import Wav2Vec2Processor
+from transformers import Wav2Vec2Processor, Wav2Vec2Model
 
 # --- External Datasets ---
 
@@ -43,8 +45,70 @@ VISUAL_DIR = "visual"
 WOW_DIR = "wow"
 ZERO_DIR = "zero"
 SPEECHCOMMANDS_DATA_DIR = os.getenv("SPEECHCOMMANDS_DATA_DIR")
+
+label_to_command = [
+'backward',    # 0
+'bed',         # 1
+'bird',        # 2
+'cat',         # 3
+'dog',         # 4
+'down',        # 5
+'eight',       # 6
+'five',        # 7
+'follow',      # 8
+'forward',     # 9
+'four',        #10
+'go',          #11
+'happy',       #12
+'house',       #13
+'learn',       #14
+'left',        #15
+'marvin',      #16
+'nine',        #17
+'no',          #18
+'off',         #19
+'on',          #20
+'one',         #21
+'right',       #22
+'seven',       #23
+'sheila',      #24
+'six',         #25
+'stop',        #26
+'three',       #27
+'tree',        #28
+'two',         #29
+'up',          #30
+'visual',      #31
+'yes',         #32
+'zero',        #33
+'unknown'      #34
+]
+
 processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
-ort_session = ort.InferenceSession("../../work/test.onnx")
+# ort_session = ort.InferenceSession("../../work/test.onnx")
+class CommandClassifier(nn.Module):
+    def __init__(self, input_dim=768, num_classes=35):
+        super(CommandClassifier, self).__init__()
+        self.classifier = nn.Sequential(
+            nn.Linear(input_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(256, num_classes)
+        )
+
+    def forward(self, x):
+        return self.classifier(x)
+        
+def load_model(model_path="trained_model/pytorch_model.bin"):
+    base = Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base")
+    head = CommandClassifier()
+    # head.load_state_dict(torch.load(model_path, map_location=torch.device("cpu")))
+    head.eval()
+    return base, head
+    
+base, head = load_model()
+
+
 
 @pytest.fixture(scope="session")
 def predict():
@@ -52,9 +116,13 @@ def predict():
         speech_array, sr = sf.read(file)
         features = processor(speech_array, sampling_rate=16000, return_tensors="pt")
         input_values = features.input_values
-        onnx_outputs = ort_session.run(None, {ort_session.get_inputs()[0].name: input_values.numpy()})[0]
-        prediction = np.argmax(onnx_outputs, axis=-1)
-        return processor.decode(prediction.squeeze().tolist())
+        # onnx_outputs = ort_session.run(None, {ort_session.get_inputs()[0].name: input_values.numpy()})[0]
+        # prediction = np.argmax(onnx_outputs, axis=-1)
+        # return processor.decode(prediction.squeeze().tolist())
+        features = base(input_values).last_hidden_state.mean(dim=1)
+        logits = head(features)
+        pred = torch.argmax(logits, dim=1).item()
+        return label_to_command[pred]
     return predict_file
 
 def evaluate_folder(folder_path, predict):
@@ -62,7 +130,7 @@ def evaluate_folder(folder_path, predict):
     total = 0
     for fname in os.listdir(os.path.join("../../speech_commands_v0.02", folder_path)):
         pred = predict(os.path.join("../../speech_commands_v0.02", folder_path, fname))
-        if pred == folder_path.upper(): 
+        if pred == folder_path.lower(): 
             correct += 1
         total += 1
     return correct / total * 100 if total > 0 else 0
