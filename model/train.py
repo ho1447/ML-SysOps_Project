@@ -17,8 +17,18 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #mlflow.set_experiment("wav2vec-command")
 
 # ------------------- Dataset Loading -------------------
-print("📦 Loading dataset from local folder...")
-dataset = load_dataset("audiofolder", data_dir="../data/speech_commands", split="train[:10%]")
+print("📦 Loading dataset from mounted object storage...")
+data_dir = "/mnt/object/speech_commands_v0.02_processed"
+dataset = load_dataset("audiofolder", 
+                       data_dir=os.path.join(data_dir, "training"), 
+                       split="train[:10%]")
+val_dataset = load_dataset("audiofolder", 
+                           data_dir=os.path.join(data_dir, "validation"), 
+                           split="validation")
+
+test_dataset = load_dataset("audiofolder", 
+                            data_dir=os.path.join(data_dir, "evaluation"), 
+                            split="test")
 dataset = dataset.cast_column("audio", Audio(sampling_rate=16000))
 
 # ------------------- Processor -------------------
