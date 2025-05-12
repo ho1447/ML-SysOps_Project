@@ -1,65 +1,92 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from datasets import load_dataset
+from datasets import load_dataset, Audio
 from transformers import Wav2Vec2Processor, Wav2Vec2Model
 from command_classifier import CommandClassifier
-from ray import tune
-from ray.tune.integration.mlflow import MLflowLoggerCallback
-import os
+from tqdm import tqdm
 import mlflow
+import mlflow.pytorch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def load_data():
-    dataset = load_dataset("speech_commands", "v0.02", split="train[:1%]")
-    dataset = dataset.cast_column("audio", {"id": "string", "array": "float32", "sampling_rate": "int64"})
+# ------------------- MLflow Setup -------------------
+#mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:8000"))
+#mlflow.set_experiment("wav2vec-command")
 
-    processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
+# ------------------- Dataset Loading -------------------
+print("📦 Loading dataset from local folder...")
+dataset = load_dataset("audiofolder", data_dir="../data/speech_commands", split="train[:10%]")
+dataset = dataset.cast_column("audio", Audio(sampling_rate=16000))
 
-    def preprocess(example):
-        audio = example["audio"]
-        inputs = processor(audio["array"], sampling_rate=audio["sampling_rate"], return_tensors="pt", padding=True)
-        example["input_values"] = inputs.input_values[0]
-        example["label"] = int(example["label"]) if isinstance(example["label"], int) else 0
-        return example
+# ------------------- Processor -------------------
+processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
 
-    dataset = dataset.map(preprocess)
+def preprocess(example):
+    inputs = processor(example["audio"]["array"], sampling_rate=16000, return_tensors="pt", padding=True)
+    example["input_values"] = inputs.input_values[0]
+    if "attention_mask" in inputs:
+        example["attention_mask"] = inputs.attention_mask[0]
+    #example["label"] = example["label"]  # already encoded by `datasets`
+    return example
 
-    class SpeechDataset(torch.utils.data.Dataset):
-        def __init__(self, dataset):
-            self.dataset = dataset
+print("🔄 Preprocessing...")
+dataset = dataset.map(preprocess)
 
-        def __len__(self):
-            return len(self.dataset)
+# ------------------- DataLoader -------------------
+class SpeechDataset(torch.utils.data.Dataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
 
-        def __getitem__(self, idx):
-            item = self.dataset[idx]
-            return item["input_values"], item["label"]
+    def __len__(self):
+        return len(self.dataset)
 
-    return DataLoader(SpeechDataset(dataset), batch_size=4, shuffle=True)
+    def __getitem__(self, idx):
+        item = self.dataset[idx]
+        return item["input_values"], item["label"]
+    
+def collate_fn(batch):
+    input_values = [example["input_values"] for example in batch]
+    labels = [example["label"] for example in batch]
 
-def train_model(config):
-    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
-    mlflow.set_experiment("wav2vec-command")
+    batch_inputs = processor.pad(
+        {"input_values": input_values},
+        padding=True,
+        return_tensors="pt"
+    )
 
-    base_model = Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base").to(device)
-    classifier = CommandClassifier(dropout=config["dropout"]).to(device)
+    batch_labels = torch.tensor(labels)
+    return batch_inputs.input_values, batch_labels
 
-    for param in base_model.parameters():
-        param.requires_grad = False
+train_loader = DataLoader(SpeechDataset(dataset), batch_size=4, shuffle=True, collate_fn=collate_fn)
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(classifier.parameters(), lr=config["lr"])
-    train_loader = load_data()
+# ------------------- Model Setup -------------------
+print("📥 Loading Wav2Vec2 and classifier...")
+base_model = Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base").to(device)
+classifier = CommandClassifier(num_classes=dataset.features["label"].num_classes).to(device)
+
+# Freeze base model
+for param in base_model.parameters():
+    param.requires_grad = False
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(classifier.parameters(), lr=1e-4)
+
+# ------------------- Training -------------------
+print("🚀 Starting training...")
+
+with mlflow.start_run():
+    mlflow.log_param("learning_rate", 1e-4)
+    mlflow.log_param("epochs", 3)
+    mlflow.log_param("batch_size", 4)
 
     for epoch in range(3):
         classifier.train()
         running_loss = 0.0
-        correct = 0
-        total = 0
-        for inputs, labels in train_loader:
+        print(f"\n🧠 Epoch {epoch + 1}")
+        for inputs, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}", ncols=100):
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -74,25 +101,15 @@ def train_model(config):
             optimizer.step()
 
             running_loss += loss.item()
-            correct += (outputs.argmax(dim=1) == labels).sum().item()
-            total += labels.size(0)
 
-        accuracy = correct / total
-        tune.report(loss=running_loss / len(train_loader), accuracy=accuracy)
+        avg_loss = running_loss / len(train_loader)
+        print(f"📉 Loss: {avg_loss:.4f}")
+        mlflow.log_metric("loss", avg_loss, step=epoch + 1)
 
+    # Save classifier
     os.makedirs("trained_model", exist_ok=True)
-    torch.save(classifier.state_dict(), "trained_model/pytorch_model.bin")
+    model_path = "trained_model/pytorch_model.bin"
+    torch.save(classifier.state_dict(), model_path)
+    mlflow.log_artifact(model_path)
 
-if __name__ == "__main__":
-    config = {
-        "lr": tune.grid_search([1e-3, 1e-4]),
-        "dropout": tune.uniform(0.1, 0.5)
-    }
-
-    tune.run(
-        train_model,
-        config=config,
-        num_samples=1,
-        callbacks=[MLflowLoggerCallback(tracking_uri=os.getenv("MLFLOW_TRACKING_URI"))],
-        resources_per_trial={"cpu": 2, "gpu": int(torch.cuda.is_available())}
-    )
+print("✅ Training complete.")

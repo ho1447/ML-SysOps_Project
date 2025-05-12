@@ -1,0 +1,30 @@
+volumes:
+  speech_commands:
+    external: true  # Uses externally created volume
+
+services:
+  init-speech-data:
+    image: python:3.11
+    volumes:
+      - speech_commands:/data
+    working_dir: /data
+    command:
+      - bash
+      - -c
+      - |
+        set -e  # Stop on error
+        echo "Creating dataset directory..."
+        mkdir -p /data/speech_commands && cd /data/speech_commands
+
+        echo "Installing dependencies..."
+        apt-get update && apt-get install -y git
+        pip install datasets
+
+        echo "Downloading dataset with Hugging Face 'datasets'..."
+        python3 - <<EOF
+        from datasets import load_dataset
+        dataset = load_dataset("speech_commands", "v0.02")
+        dataset.save_to_disk("/data/speech_commands")
+        print("Speech Commands v0.02 dataset downloaded and saved.")
+        EOF
+    restart: "no"

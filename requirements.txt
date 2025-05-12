@@ -6,5 +6,7 @@ datasets
 pandas
 numpy
 scikit-learn
-ray[train]
+ray[tune] >= 2.0.0
 huggingface_hub
+soundfile
+librosa

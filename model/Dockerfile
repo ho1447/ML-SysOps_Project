@@ -5,8 +5,9 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# ML Flow
+# APIs
 ENV MLFLOW_TRACKING_URI=http://localhost:5000 
+ENV FAST_API_URI=http://localhost:8000
 
 # Set working directory inside the container
 WORKDIR /app
@@ -16,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsndfile1 \
     git \
+    python3-pip \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy only requirements first to use Docker cache
@@ -29,4 +31,4 @@ COPY model/ /app/
 
 
 # Set default command — override with `docker run ... python eval.py`
-CMD ["python", "train.py"]
+CMD ["python", "model/train.py"]
