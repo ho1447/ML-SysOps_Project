@@ -80,7 +80,7 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
 
 <!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, and which optional "difficulty" points you are attempting. -->
 1. **Strategy**:
-   - Use a **three-part model**:
+   - Use a [**three-part model**](https://github.com/ho1447/ML-SysOps_Project/tree/main/model):
      - Feature extraction (Mel spectrograms using torchaudio)
      - Noise classification model (CNN-based)
      - Speech command classification model (MobileNetV2 or Wav2Vec2.0)
@@ -88,7 +88,7 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
    - Tune hyperparameters with **Ray Tune**
 
 2. **Tools**:
-   - Ray Train for distributed training on Chameleon Cloud
+   - Ray Train for distributed training on Chameleon Cloud ([instructions](https://github.com/ho1447/ML-SysOps_Project/blob/main/Chameleon/CHI%40UC/0_intro.ipynb) for running on Chameleon)
    - MLflow to track experiment runs and parameters
 
 3. **Justification**:
@@ -105,8 +105,8 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
 
 <!-- Make sure to clarify how you will satisfy the Unit 6 and Unit 7 requirements,  and which optional "difficulty" points you are attempting. -->
 1. **Strategy**:
-   - Package models into a container and expose them via a **FastAPI endpoint**
-   - Perform inference using ONNX-optimized models on both GPU and CPU
+   - Package models into a container and expose them via a [**FastAPI endpoint**](https://github.com/ho1447/ML-SysOps_Project/tree/main/fastapi_pt)
+   - Perform [inference](https://github.com/ho1447/ML-SysOps_Project/tree/main/workspace) using ONNX-optimized models on both CPU and edge device (Raspberry pi)
    - Compare latency and concurrency behavior
 
 2. **Monitoring**:
@@ -114,9 +114,9 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
    - Use a dashboard to visualize misclassification trends and input stats
 
 3. **Course links**:
-   - **Unit 6**: Serving via API and edge deployment for a low resource device with latency/concurrency monitoring
+   - **Unit 6**: Serving via [API](https://github.com/ho1447/ML-SysOps_Project/tree/main/fastapi_pt) and [edge deployment](https://github.com/ho1447/ML-SysOps_Project/blob/main/workspace/offline_eval.ipynb) for a low resource device with latency/concurrency monitoring
    - **Unit 7**: Log-based and live monitoring of performance
-   - ✅ **Difficulty point**: ONNX vs TorchScript deployment + dashboard for model degradation
+   - ✅ **Difficulty point**: ONNX and edge device deployment + dashboard for model degradation
 
 #### Data Pipeline
 
