@@ -146,8 +146,8 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
         - Dataset sample
             - Speech Commands: [0a2b400e_nohash_0.wav](/data/0a2b400e_nohash_0.wav)
             - Background noise: [doing_the_dishes.wav](/data/doing_the_dishes.wav)
+        - This data can be used by Alexa to initiate the voice assistant, control media playback, etc.
 
-        <!-- Relate the data sample to the specific customer -->
         <!-- If relevant, describe what is known about a production sample over its lifetime. (example: are some features only known later? is there a natural ground truth label?) -->
 
 3. **Data pipeline:**
