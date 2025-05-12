@@ -128,8 +128,8 @@ def predict():
 def evaluate_folder(folder_path, predict):
     correct = 0
     total = 0
-    for fname in os.listdir(os.path.join(SPEECHCOMMANDS_DATA_DIR,"speech_commands_v0.02", folder_path)):
-        pred = predict(os.path.join(SPEECHCOMMANDS_DATA_DIR,"speech_commands_v0.02", folder_path, fname))
+    for fname in os.listdir(os.path.join("../../speech_commands_v0.02", folder_path)):
+        pred = predict(os.path.join("../../speech_commands_v0.02", folder_path, fname))
         if pred == folder_path.lower(): 
             correct += 1
         total += 1
