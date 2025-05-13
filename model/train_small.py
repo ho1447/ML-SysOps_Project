@@ -1,9 +1,11 @@
 import os
+import glob
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from datasets import load_dataset, Audio, DatasetDict, load_from_disk
+import torchaudio
+from datasets import Dataset, DatasetDict
 from transformers import Wav2Vec2Processor, Wav2Vec2Model
 from command_classifier import CommandClassifier
 from tqdm import tqdm
@@ -14,38 +16,46 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ------------------- MLflow Setup -------------------
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:8000"))
-mlflow.set_experiment("wav2vec-command-full")
+mlflow.set_experiment("wav2vec-command-small")
 
-# ------------------- Paths -------------------
-data_root = "/mnt/object/speech_commands_v0.02_processed"
-cache_dir = "cached_dataset"
-processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
+# ------------------- Load Only 5 Samples from Disk -------------------
+def load_small_dataset_direct(data_root, processor, max_samples=5):
+    print(f"📦 Manually loading {max_samples} samples from each class...")
 
-# ------------------- Load & Preprocess Dataset -------------------
-if os.path.exists(cache_dir):
-    print("📂 Loading cached dataset...")
-    dataset = load_from_disk(cache_dir)
-else:
-    print("📦 Loading and preprocessing dataset from source...")
-    dataset = DatasetDict({
-        "train": load_dataset("audiofolder", data_dir=os.path.join(data_root, "training"), split="train"),
-        "validation": load_dataset("audiofolder", data_dir=os.path.join(data_root, "validation"), split="validation"),
-        "test": load_dataset("audiofolder", data_dir=os.path.join(data_root, "evaluation"), split="test")
-    })
+    audio_paths = []
+    class_names = sorted(os.listdir(data_root))
+    label_map = {name: i for i, name in enumerate(class_names)}
 
-    for split in dataset:
-        dataset[split] = dataset[split].cast_column("audio", Audio(sampling_rate=16000))
+    for class_name in class_names:
+        class_dir = os.path.join(data_root, class_name)
+        files = glob.glob(os.path.join(class_dir, "*.wav"))
+        selected = files[:max_samples]
+        for path in selected:
+            audio_paths.append((path, label_map[class_name]))
 
-    def preprocess(example):
-        inputs = processor(example["audio"]["array"], sampling_rate=16000, return_tensors="pt", padding=True)
-        return {
+    print("🔊 Loading and processing audio...")
+    data = []
+    for path, label in audio_paths:
+        waveform, sr = torchaudio.load(path)
+        waveform = torchaudio.functional.resample(waveform, sr, 16000)
+        array = waveform.squeeze().numpy()
+
+        inputs = processor(array, sampling_rate=16000, return_tensors="pt", padding=True)
+        item = {
             "input_values": inputs.input_values[0],
-            "label": example["label"]
+            "label": label
         }
+        data.append(item)
 
-    dataset = dataset.map(preprocess, num_proc=4, remove_columns=["audio"], desc="Preprocessing")
-    dataset.save_to_disk(cache_dir)
-    print("✅ Dataset cached to disk for future runs.")
+    dataset = Dataset.from_list(data)
+    dataset = DatasetDict({"train": dataset})
+    dataset["validation"] = dataset["train"].select(range(min(2, len(dataset["train"]))))
+    return dataset, label_map
+
+# ------------------- Paths & Processor -------------------
+data_root = "/mnt/object/speech_commands_v0.02_processed/training"
+processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
+dataset, label_map = load_small_dataset_direct(data_root, processor, max_samples=5)
 
 # ------------------- DataLoader Setup -------------------
 class SpeechDataset(torch.utils.data.Dataset):
@@ -69,8 +79,8 @@ def collate_fn(batch):
     batch_labels = torch.tensor(labels)
     return batch_inputs.input_values, batch_labels
 
-train_loader = DataLoader(SpeechDataset(dataset["train"]), batch_size=8, shuffle=True, collate_fn=collate_fn, num_workers=4, pin_memory=True)
-val_loader = DataLoader(SpeechDataset(dataset["validation"]), batch_size=8, shuffle=False, collate_fn=collate_fn, num_workers=2, pin_memory=True)
+train_loader = DataLoader(SpeechDataset(dataset["train"]), batch_size=4, shuffle=True, collate_fn=collate_fn)
+val_loader = DataLoader(SpeechDataset(dataset["validation"]), batch_size=4, shuffle=False, collate_fn=collate_fn)
 
 # ------------------- Load Pretrained Models -------------------
 print("📥 Loading local Wav2Vec2 base model and classifier...")
@@ -80,16 +90,12 @@ base_model = Wav2Vec2Model.from_pretrained(
     local_files_only=True
 ).to(device)
 
-classifier = CommandClassifier(num_classes=dataset["train"].features["label"].num_classes).to(device)
+classifier = CommandClassifier(num_classes=len(label_map)).to(device)
 
 classifier_ckpt_path = "models/wav2vec2-command-classifier/pytorch_model.bin"
 if os.path.exists(classifier_ckpt_path):
-    try:
-        classifier.load_state_dict(torch.load(classifier_ckpt_path, map_location=device))
-        print("✅ Classifier weights loaded from local checkpoint.")
-    except RuntimeError as e:
-        print("⚠️ Checkpoint structure mismatch — skipping load.")
-        print(e)
+    classifier.load_state_dict(torch.load(classifier_ckpt_path, map_location=device))
+    print("✅ Classifier weights loaded from local checkpoint.")
 else:
     print("⚠️ Classifier checkpoint not found, initializing from scratch.")
 
@@ -102,14 +108,15 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(classifier.parameters(), lr=1e-4)
 
 # ------------------- Training Loop -------------------
-print("🚀 Starting full training...")
+print("🚀 Starting training on small dataset...")
 
 with mlflow.start_run():
     mlflow.log_param("learning_rate", 1e-4)
-    mlflow.log_param("epochs", 10)
-    mlflow.log_param("batch_size", 8)
+    mlflow.log_param("epochs", 5)
+    mlflow.log_param("batch_size", 4)
+    mlflow.log_param("dataset_size", len(dataset["train"]))
 
-    for epoch in range(10):
+    for epoch in range(5):
         classifier.train()
         total_loss = 0.0
         print(f"\n🧠 Epoch {epoch + 1}")
