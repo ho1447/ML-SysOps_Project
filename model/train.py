@@ -76,13 +76,13 @@ val_loader = DataLoader(SpeechDataset(dataset["validation"]), batch_size=8, shuf
 print("📥 Loading local Wav2Vec2 base model and classifier...")
 
 base_model = Wav2Vec2Model.from_pretrained(
-    "models/wav2vec2-base",
+    "../models/wav2vec2-base",
     local_files_only=True
 ).to(device)
 
 classifier = CommandClassifier(num_classes=dataset["train"].features["label"].num_classes).to(device)
 
-classifier_ckpt_path = "models/wav2vec2-command-classifier/pytorch_model.bin"
+classifier_ckpt_path = "../models/wav2vec2-command-classifier/pytorch_model.bin"
 if os.path.exists(classifier_ckpt_path):
     try:
         classifier.load_state_dict(torch.load(classifier_ckpt_path, map_location=device))

@@ -19,7 +19,7 @@ mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:8000"
 mlflow.set_experiment("wav2vec-command-small")
 
 # ------------------- Load Only 5 Samples from Disk -------------------
-def load_small_dataset_direct(data_root, processor, max_samples=5):
+def load_small_dataset_direct(data_root, processor, max_samples=50):
     print(f"📦 Manually loading {max_samples} samples from each class...")
 
     audio_paths = []
@@ -55,7 +55,7 @@ def load_small_dataset_direct(data_root, processor, max_samples=5):
 # ------------------- Paths & Processor -------------------
 data_root = "/mnt/object/speech_commands_v0.02_processed/training"
 processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
-dataset, label_map = load_small_dataset_direct(data_root, processor, max_samples=5)
+dataset, label_map = load_small_dataset_direct(data_root, processor, max_samples=50)
 
 # ------------------- DataLoader Setup -------------------
 class SpeechDataset(torch.utils.data.Dataset):
@@ -86,13 +86,13 @@ val_loader = DataLoader(SpeechDataset(dataset["validation"]), batch_size=4, shuf
 print("📥 Loading local Wav2Vec2 base model and classifier...")
 
 base_model = Wav2Vec2Model.from_pretrained(
-    "models/wav2vec2-base",
+    "../models/wav2vec2-base",
     local_files_only=True
 ).to(device)
 
 classifier = CommandClassifier(num_classes=len(label_map)).to(device)
 
-classifier_ckpt_path = "models/wav2vec2-command-classifier/pytorch_model.bin"
+classifier_ckpt_path = "../models/wav2vec2-command-classifier/pytorch_model.bin"
 if os.path.exists(classifier_ckpt_path):
     classifier.load_state_dict(torch.load(classifier_ckpt_path, map_location=device))
     print("✅ Classifier weights loaded from local checkpoint.")
