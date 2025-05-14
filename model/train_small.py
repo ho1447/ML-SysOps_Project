@@ -55,7 +55,7 @@ def load_small_dataset_direct(data_root, processor, max_samples=50):
 # ------------------- Paths & Processor -------------------
 data_root = "/mnt/object/speech_commands_v0.02_processed/training"
 processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
-dataset, label_map = load_small_dataset_direct(data_root, processor, max_samples=50)
+dataset, label_map = load_small_dataset_direct(data_root, processor, max_samples=300)
 
 # ------------------- DataLoader Setup -------------------
 class SpeechDataset(torch.utils.data.Dataset):
@@ -116,7 +116,7 @@ with mlflow.start_run():
     mlflow.log_param("batch_size", 4)
     mlflow.log_param("dataset_size", len(dataset["train"]))
 
-    for epoch in range(5):
+    for epoch in range(30):
         classifier.train()
         total_loss = 0.0
         print(f"\n🧠 Epoch {epoch + 1}")
