@@ -139,12 +139,15 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
         - Label Studio
 
 2. **Offline data:**
-    - Training dataset: speech_commands_v0.02
+    - Training dataset: speech_commands_v0.02_processed and speech_commands_v0.02_processed_mel
+        - speech_commands_v0.02_processed sample: [004ae714_nohash_0_doing_the_dishes.wav](/data/004ae714_nohash_0_doing_the_dishes.wav)
+        - speech_commands_v0.02_processed_mel sample: [004ae714_nohash_0_doing_the_dishes.npy](/data/004ae714_nohash_0_doing_the_dishes.npy)
+    - speech_commands_v0.02
         - Consists of one-second .wav audio files, each containing an English word spoken by different speakers
         - Crowdsourced by Google, where participants were prompted to say a specific command such as "yes", "no", "stop", etc.
         - Also includes realistic background audio files ("doing_the_dishes.wav", "running_tap.wav") which can be mixed into training data to simulate noisy environments
         - Dataset sample
-            - Speech Commands: [0a2b400e_nohash_0.wav](/data/0a2b400e_nohash_0.wav)
+            - Speech Commands: [004ae714_nohash_0.wav](/data/004ae714_nohash_0.wav)
             - Background noise: [doing_the_dishes.wav](/data/doing_the_dishes.wav)
         - This data can be used by Alexa to initiate the voice assistant, control media playback, etc.
 
