@@ -180,19 +180,200 @@ We train and serve models on Chameleon Cloud, exposing a speech recognition API 
 
 ### Continuous X
 
-<!-- Make sure to clarify how you will satisfy the Unit 3 requirements,  and which optional "difficulty" points you are attempting. -->
-1. **Strategy**:
-   - Use **Terraform** and **Helm** to provision training, serving, and tracking environments on Chameleon
-   - Use **Argo Workflows** to retrain and redeploy:
-     - Triggered weekly or when model degradation is detected
-     - Auto-promote from staging → canary → production if validation passes
 
-2. **CI/CD**:
-   - GitHub Actions for building containers, testing, and pushing to registry
+## 1. Selecting Site
 
-3. **Course links**:
-   - **Unit 3**: Full CI/CD setup with infrastructure as code
-   - Immutable container deployments, no ClickOps involved
+The Modular-Speech Continuous X Pipeline sets up infrastructure predominantly on **KVM\@TACC** using Chameleon Cloud. We start by selecting the site.
+
+```python
+from chi import server, context
+
+context.version = "1.0"
+context.choose_site(default="KVM@TACC")
+```
+
+This pipeline glues together the **Model Training**, **Evaluation**, **Serving**, and **Data Operations** components. The ultimate goal is rapid development-to-deployment cycles with iterative improvements—this is the *Ops* in MLOps.
+
+We'll provision resources and install tooling through infrastructure-as-code:
+
+* **Terraform**: Manages our cloud infra declaratively.
+* **Ansible**: Installs Kubernetes and Argo ecosystem tools.
+* **Argo CD**: Enables GitOps-based continuous delivery.
+* **Argo Workflows**: Powers the container-native orchestration of our ML pipelines.
+
+Start by cloning the infrastructure repository:
+
+```bash
+git clone --recurse-submodules https://github.com/ho1447/ML-SysOps_Project.git
+```
+
+## 2. Setup Environment
+
+Install Terraform:
+
+```bash
+mkdir -p /work/.local/bin
+wget https://releases.hashicorp.com/terraform/1.10.5/terraform_1.10.5_linux_amd64.zip
+unzip -o -q terraform_1.10.5_linux_amd64.zip
+mv terraform /work/.local/bin
+rm terraform_1.10.5_linux_amd64.zip
+export PATH=/work/.local/bin:$PATH
+```
+
+Prepare the path for additional tools:
+
+```bash
+export PATH=/work/.local/bin:$PATH
+export PYTHONUSERBASE=/work/.local
+```
+
+Install Kubespray dependencies:
+
+```bash
+PYTHONUSERBASE=/work/.local pip install --user -r ./Modular-Speech/continuous_X/ansible/k8s/kubespray/requirements.txt
+```
+
+## 3. Provision Infrastructure with Terraform
+
+Navigate to the Terraform config directory:
+
+```bash
+cd /work/Modular-Speech/continuous_X/tf/kvm/
+export PATH=/work/.local/bin:$PATH
+unset $(set | grep -o "^OS_[A-Za-z0-9_]*")
+```
+
+Initialize and apply configuration:
+
+```bash
+terraform init
+export TF_VAR_suffix=speech_proj
+export TF_VAR_key=id_rsa_chameleon_speech
+terraform validate
+terraform apply -auto-approve
+```
+
+## 4. Ansible for Configuration Management
+
+Ensure your environment is ready:
+
+```bash
+export PATH=/work/.local/bin:$PATH
+export PYTHONUSERBASE=/work/.local
+```
+
+Check connectivity:
+
+```bash
+ansible -i inventory.yml all -m ping
+```
+
+Run a hello-world test:
+
+```bash
+ansible-playbook -i inventory.yml general/hello_host.yml
+```
+
+## 5. Deploy Kubernetes
+
+SSH and prepare Kubernetes installation:
+
+```bash
+cd /work/.ssh/
+ssh-add id_rsa_chameleon_speech
+
+cd /work/Modular-Speech/continuous_X/ansible
+ansible-playbook -i inventory.yml pre_k8s/pre_k8s_configure.yml
+```
+
+Deploy Kubernetes with Kubespray:
+
+```bash
+cd ./k8s/kubespray
+ansible-playbook -i ../inventory/mycluster --become --become-user=root ./cluster.yml
+```
+
+## 6. Argo CD for Application Deployment
+
+Set up ArgoCD for platform services:
+
+```bash
+cd /work/.ssh
+ssh-add id_rsa_chameleon_speech
+
+cd /work/Modular-Speech/continuous_X/ansible
+ansible-playbook -i inventory.yml argocd/argocd_add_platform.yml
+```
+
+Platform includes:
+
+* **MinIO**
+* **MLFlow**
+* **PostgreSQL**
+* **Label Studio**
+* **Grafana**
+* **Prometheus**
+
+Deploy the initial container image for Modular-Speech:
+
+```bash
+ansible-playbook -i inventory.yml argocd/workflow_build_init.yml
+```
+
+Deploy staging environment:
+
+```bash
+ansible-playbook -i inventory.yml argocd/argocd_add_staging.yml
+```
+
+Canary and production environments:
+
+```bash
+ansible-playbook -i inventory.yml argocd/argocd_add_canary.yml
+ansible-playbook -i inventory.yml argocd/argocd_add_prod.yml
+```
+
+## 7. Model Lifecycle - Part 1
+
+To manually trigger training and evaluation:
+
+* Use the `train-model` Argo Workflow template.
+* Provide the public IPs for:
+
+  * training endpoint
+  * evaluation endpoint
+  * MLFlow
+
+Model training triggers via REST API and returns a `RUN_ID`, which we poll via MLFlow’s API.
+
+Evaluation endpoint returns a model version, which will be used to tag the container.
+
+## 8. Model Lifecycle - Part 2
+
+Progress through environments:
+
+* **Staging**: Test performance and integration.
+* **Canary**: Serve a subset of real users.
+* **Production**: Full rollout after validation.
+
+To promote models:
+
+```text
+Argo Workflows > promote-model > Submit
+```
+
+This copies artifacts and builds new images for each environment using templates like `build-container-image.yaml`.
+
+## 9. Teardown with Terraform
+
+To remove infrastructure:
+
+```bash
+cd /work/Modular-Speech/continuous_X/tf/kvm
+export TF_VAR_suffix=speech_proj
+export TF_VAR_key=id_rsa_chameleon_speech
+terraform destroy -auto-approve
+```
 
 ### Difficulty Points Achieved
 We have satisfied **4 difficulty points** across different units in our project proposal, ensuring our approach is robust, scalable, and aligned with the requirements.
